@@ -23,12 +23,12 @@ class Echauffement(Strategy):
         s = SuperState(state, id_team, id_player)
         if(self.engage==0):
             self.engage=1
-            return SoccerAction(Vector2D(0,0), s.player_e - s.player)
+            return SoccerAction(Vector2D(0,0), (s.player_e - s.player).normalize().scale(3.0))
         if((s.ball_vitesse.norm==0)):
             self.engage=0
         if(s.dir_ball.norm < CAN_SHOOT):
-            return SoccerAction(s.dir_ball.scale(5.0), s.player_e - s.player)
-        return SoccerAction(s.dir_ball.scale(5.0), (Vector2D(0,0)))
+            return SoccerAction(s.dir_ball.normalize().scale(5.0), (s.player_e - s.player).normalize().scale(3.0))
+        return SoccerAction(s.dir_ball.normalize().scale(5.0), (Vector2D(0,0)))
 
 class Attaque(Strategy):
     def __init__(self):
@@ -36,34 +36,105 @@ class Attaque(Strategy):
         self.engage = 0
     def compute_strategy(self, state, id_team, id_player):
         s = SuperState(state, id_team, id_player)
-        
+        if((s.ball_vitesse.norm==0)):
+            self.engage=0
+        if(self.engage==0):
+            self.engage=1
+            return SoccerAction(Vector2D(0,0), s.player_e - s.player)
+
+            
+        if(s.dir_ball.norm < CAN_SHOOT):
+            if(id_team==1):
+                return SoccerAction(s.dir_ball.normalize().scale(5.0), (Vector2D(GAME_WIDTH, GAME_HEIGHT-10) - s.player).normalize().scale(3.8))     
+            return SoccerAction(s.dir_ball.normalize().scale(5.0), (Vector2D(0, GAME_HEIGHT - s.player_e.y) - s.player).normalize().scale(3.8))
+            
+            if(abs(GAME_HEIGHT/2 - s.player_e.y) < 10):
+                return SoccerAction(s.dir_ball.normalize().scale(5.0), (Vector2D(0, 10) - s.player).normalize().scale(3.8))       
+            return SoccerAction(s.dir_ball.normalize().scale(5.0), (Vector2D(GAME_WIDTH, GAME_HEIGHT - s.player_e.y) - s.player).normalize().scale(3.8))
+        return SoccerAction(s.dir_ball.normalize().scale(5.0), (Vector2D(0,0)))
+    
+class Defense(Strategy):
+    def __init__(self):
+        Strategy.__init__(self, "Defense")
+        self.engage = 0
+    def compute_strategy(self, state, id_team, id_player):
+        s = SuperState(state, id_team, id_player)
+        if((s.ball_vitesse.norm==0)):
+            self.engage=0
         if(self.engage==0):
             self.engage=1
             return SoccerAction(Vector2D(0,0), s.player_e - s.player)
 
         if (s.ball.x > GAME_WIDTH/2 and id_team==1):
-            direction = Vector2D(GAME_WIDTH/4 - s.player.x , GAME_HEIGHT/2- s.player.y).scale(5.0)
+            direction = Vector2D(GAME_WIDTH/3 - s.player.x , GAME_HEIGHT/2- s.player.y).normalize().scale(5.0)
             return SoccerAction(direction, Vector2D(0,0))
         elif (s.ball.x < GAME_WIDTH/2 and id_team==2):
-            direction = (Vector2D((GAME_WIDTH*3)/4, GAME_HEIGHT/2) - s.player).scale(5.0)
+            direction = (Vector2D((GAME_WIDTH)*2/3, GAME_HEIGHT/2) - s.player).normalize().scale(5.0)
             return SoccerAction(direction, Vector2D(0,0))
 
             
         if(s.dir_ball.norm < CAN_SHOOT):
-            return SoccerAction(s.dir_ball.scale(5.0), s.player_e - s.player)
+            if(id_team==1):
+                return SoccerAction(s.dir_ball.normalize().scale(5.0), Vector2D(GAME_WIDTH, GAME_HEIGHT) - s.player)    
+            return SoccerAction(s.dir_ball, Vector2D(0,0) - s.player)
 
-        return SoccerAction(s.dir_ball.scale(5.0), (Vector2D(0,0)))
-    
-# Create teams
-team1 = SoccerTeam(name="Team 1")
-team2 = SoccerTeam(name="Team 2")
+        return SoccerAction(s.dir_ball, (Vector2D(0,0)))
+       
+class Attaque2v2(Strategy):
+    def __init__(self):
+        Strategy.__init__(self, "Attaque2v2")
+        self.engage = 0
+    def compute_strategy(self, state, id_team, id_player):
+        s = SuperState(state, id_team, id_player)
+        if((s.ball_vitesse.norm==0)):
+            self.engage=0
+        if(self.engage==0):
+            self.engage=1
+            if(id_team==1):
+                return SoccerAction(Vector2D(0,0), (Vector2D((GAME_WIDTH)/3, GAME_HEIGHT/2) - s.player).normalize().scale(4.5))
+            return SoccerAction(Vector2D(0,0), (Vector2D((GAME_WIDTH)*2/3, GAME_HEIGHT/2) - s.player).normalize().scale(4.5))
+        
+        
+        if(s.dir_ball.norm < 10):
+            if(s.dir_ball.norm < CAN_SHOOT):
+                if(id_team==1):
+                    if(s.ball.x < GAME_WIDTH/2):
+                        return SoccerAction(s.dir_ball.normalize().scale(3.0),  Vector2D(1,0).normalize().scale(50.0))
+                if(s.ball.x > GAME_WIDTH/2):
+                    return SoccerAction(s.dir_ball.normalize().scale(3.0),  Vector2D(-1,0).normalize().scale(50.0))
+            return SoccerAction(s.dir_ball, (Vector2D(0,0)))
+        
+        if (id_team==1):
+            direction = Vector2D(GAME_WIDTH/2 - s.player.x -2 , (GAME_HEIGHT*2)/3 - s.player.y).normalize().scale(5.0)
+            return SoccerAction(direction, Vector2D(0,0))
+        elif (id_team==2):
+            direction = (Vector2D((GAME_WIDTH)/2 - s.player.x + 2, (GAME_HEIGHT)/3 - s.player.y)).normalize().scale(5.0)
+            return SoccerAction(direction, Vector2D(0,0))
 
-# Add players
-team1.add("Player 1", Attaque())  # Random strategy
-team2.add("Player 2", Attaque())   # Random strategy
+class Defense2v2(Strategy):
+    def __init__(self):
+        Strategy.__init__(self, "Defense2v2")
+        self.engage = 0
+    def compute_strategy(self, state, id_team, id_player):
+        s = SuperState(state, id_team, id_player)
+        if((s.ball_vitesse.norm==0)):
+            self.engage=0
+        if(self.engage==0):
+            self.engage=1
+            if(id_team==1):
+                return SoccerAction(Vector2D(0,0), (Vector2D((GAME_WIDTH)/3, GAME_HEIGHT/2) - s.player).normalize().scale(3.8))
+            return SoccerAction(Vector2D(0,0), (Vector2D((GAME_WIDTH)*2/3, GAME_HEIGHT/2) - s.player).normalize().scale(3.8))
+        
 
-# Create a match
-simu = VolleySimulation(team1, team2)
+        if (s.ball.x > GAME_WIDTH/2 and id_team==1):
+            direction = Vector2D(GAME_WIDTH/3 - s.player.x , GAME_HEIGHT/2- s.player.y).normalize().scale(5.0)
+            return SoccerAction(direction, Vector2D(0,0))
+        elif (s.ball.x < GAME_WIDTH/2 and id_team==2):
+            direction = (Vector2D((GAME_WIDTH)*2/3, GAME_HEIGHT/2) - s.player).normalize().scale(5.0)
+            return SoccerAction(direction, Vector2D(0,0))
 
-# Simulate and display the match
-volley_show_simu(simu)
+            
+        if(s.dir_ball.norm < CAN_SHOOT):
+            return SoccerAction(s.dir_ball.normalize().scale(5.0), (s.joueur_proche_a(id_team, id_player).position - s.player).normalize().scale(s.eloignement((s.joueur_proche_a(id_team, id_player).position.distance(s.player)))))
+            
+        return SoccerAction(s.dir_ball, (Vector2D(0,0)))

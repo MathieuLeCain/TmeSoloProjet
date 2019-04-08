@@ -1,0 +1,12 @@
+Exercice 2 :
+Le joueur tire dans le coin adverse si l'adversaire est proche du centre et à sa hauteur opposée sinon.
+
+Exercice 3:
+
+Quand la balle est de l'autre coté du terrain, le joueur se place au centre de son terrain en attendant que la balle soit de son coté puis il court vers la balle pour la renvoyer lorsqu'elle passe de son coté du filet.
+
+Exercice 4 :
+La strategie est la meme qu'à la question précédente
+
+Exercice 5 :
+L'attaquant se place sur un point fixe et se prépare à tirer, le defenseur lui fait la passe
